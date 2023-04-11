@@ -1,11 +1,18 @@
 import pandas as pd
-df_co2 = pd.read_csv(r"C:\Users\OMISTAJA\Documents\DataManagement\annual_co2_emissions.csv")
-df_green_energy = pd.read_csv(r"C:\Users\OMISTAJA\Documents\DataManagement\annual_renewable_energy.csv")
-df_population = pd.read_csv(r"C:\Users\OMISTAJA\Documents\DataManagement\annual_population.csv", on_bad_lines='skip')
+
+url = "https://raw.githubusercontent.com/pekpekkis/Data-Management-Group-Project/main/annual_co2_emissions.csv?token=GHSAT0AAAAAAB76RZK4WF6K2GGWSII7UXGIZBVK6EQ"
+df_co2 = pd.read_csv(url)
+
+url2 = "https://raw.githubusercontent.com/pekpekkis/Data-Management-Group-Project/main/annual_renewable_energy.csv?token=GHSAT0AAAAAAB76RZK5FPGNEUHBQNO4MQZOZBVK7CA"
+df_green_energy = pd.read_csv(url2)
+
+url3 = "https://raw.githubusercontent.com/pekpekkis/Data-Management-Group-Project/main/annual_population.csv?token=GHSAT0AAAAAAB76RZK4VY7U4POHFNFTERRQZBVLAGA"
+df_population = pd.read_csv(url3, on_bad_lines='skip')
 df_population = df_population.loc[:, ['Country name', 'Year', 'Population']]
 df_population = df_population.rename(columns={'Country name': 'Entity'})
-df_GDP = pd.read_csv(r"C:\Users\OMISTAJA\Documents\DataManagement\GDP.csv")
 
+url4 = "https://raw.githubusercontent.com/pekpekkis/Data-Management-Group-Project/main/GDP.csv?token=GHSAT0AAAAAAB76RZK5GXP6KWQSS6OWEQSEZBVLA6Q"
+df_GDP = pd.read_csv(url4)
 
 df_combined = df_co2.merge(df_green_energy, how='left', on=['Entity', 'Code', 'Year']).merge(df_population, how='left', on=['Entity', 'Year']).merge(df_GDP, how='left', on=['Entity', 'Code', 'Year'])
 
