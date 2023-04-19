@@ -19,14 +19,16 @@ df_combined = df_co2.merge(df_green_energy, how='left', on=['Entity', 'Code', 'Y
 df_combined['GDP per capita'] = df_combined['GDP (constant 2015 US$)'] / df_combined['Population']
 
 def income_dummies(row):
-    if row['GDP per capita'] >= 1036 and row['GDP per capita'] < 4045:
+    if row['GDP per capita'] < 1036:
+        return 1, 0, 0, 0
+    elif row['GDP per capita'] >= 1036 and row['GDP per capita'] < 4045:
         return 0, 1, 0, 0
     elif row['GDP per capita'] >= 4045 and row['GDP per capita'] < 12535:
         return 0, 0, 1, 0
     elif row['GDP per capita'] >= 12535:
         return 0, 0, 0, 1
     else:
-        return 1, 0, 0, 0
+        return 0, 0, 0, 0
 
 df_combined[['Low income', 'Lower-middle income', 'Upper-middle income', 'High income']] = df_combined.apply(income_dummies, axis=1, result_type='expand')
 
