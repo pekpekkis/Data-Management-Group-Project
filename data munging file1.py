@@ -38,6 +38,7 @@ df_combined[['Low income', 'Lower-middle income', 'Upper-middle income', 'High i
 df_combined = df_combined.rename(columns={'Entity': 'Country', 'Annual CO₂ emissions': 'CO2 emissions', 'Renewables (% equivalent primary energy)': 'Renewable energy %', 'GDP (constant 2015 US$)': 'GDP', 'Gini coefficient': 'Gini'})
 df_combined = df_combined[df_combined['Code'].notna()]
 df_combined = df_combined.drop('Code', axis='columns')
+df_combined = df_combined.drop(df_combined[df_combined['Country'] == 'World'].index, axis=0)
 
 df_2020 = df_combined.loc[df_combined.Year == 2020]
 print(df_2020)
