@@ -17,7 +17,11 @@ df_GDP = pd.read_csv(url4)
 url5 = "https://raw.githubusercontent.com/pekpekkis/Data-Management-Group-Project/main/gini_coefficient.csv"
 df_gini = pd.read_csv(url5)
 
-df_combined = df_co2.merge(df_green_energy, how='left', on=['Entity', 'Code', 'Year']).merge(df_population, how='left', on=['Entity', 'Year']).merge(df_GDP, how='left', on=['Entity', 'Code', 'Year']).merge(df_gini, how='left', on=['Entity', 'Code', 'Year'])
+url6 = "https://raw.githubusercontent.com/pekpekkis/Data-Management-Group-Project/main/continents.csv"
+df_continents = pd.read_csv(url6)
+df_continents = df_continents.drop('Year', axis='columns')
+
+df_combined = df_co2.merge(df_green_energy, how='left', on=['Entity', 'Code', 'Year']).merge(df_population, how='left', on=['Entity', 'Year']).merge(df_GDP, how='left', on=['Entity', 'Code', 'Year']).merge(df_gini, how='left', on=['Entity', 'Code', 'Year']).merge(df_continents, how='left', on=['Entity', 'Code'])
 
 df_combined['GDP per capita'] = df_combined['GDP (constant 2015 US$)'] / df_combined['Population']
 
@@ -34,6 +38,22 @@ def income_dummies(row):
         return 0, 0, 0, 0
 
 df_combined[['Low income', 'Lower-middle income', 'Upper-middle income', 'High income']] = df_combined.apply(income_dummies, axis=1, result_type='expand')
+
+def geo_dummies(row):
+    if row['Continent'] == 'Africa':
+        return 1, 0, 0, 0, 0, 0
+    elif row['Continent'] == 'Asia':
+        return 0, 1, 0, 0, 0, 0
+    elif row['Continent'] == 'Europe':
+        return 0, 0, 1, 0, 0, 0
+    elif row['Continent'] == 'North America':
+        return 0, 0, 0, 1, 0, 0
+    elif row['Continent'] == 'South America':
+        return 0, 0, 0, 0, 1, 0
+    else:
+        return 0, 0, 0, 0, 0, 1
+
+df_combined[['Africa', 'Asia', 'Europe', 'North America', 'South America', 'Oceania']] = df_combined.apply(geo_dummies, axis=1, result_type='expand')
 
 df_combined = df_combined.rename(columns={'Entity': 'Country', 'Annual CO₂ emissions': 'CO2 emissions', 'Renewables (% equivalent primary energy)': 'Renewable energy %', 'GDP (constant 2015 US$)': 'GDP', 'Gini coefficient': 'Gini'})
 df_combined = df_combined[df_combined['Code'].notna()]
