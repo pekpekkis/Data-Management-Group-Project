@@ -149,3 +149,44 @@ def choose_map(variable):
 choose_map(layer)
 
 folium_static(map_2020)
+
+import matplotlib.pyplot as plt
+
+# Group the data by country and sum the emissions for each country
+total_co2_by_country = df_2020.groupby('Country')['CO2 emissions'].sum()
+
+# Sort the data in descending order and display the top 5 countries
+top_5_countries = total_co2_by_country.sort_values(ascending=False).head(5)
+
+renewable_by_country = df_2020.groupby('Country')['Renewable energy %'].sum()
+top_5_countries2 = renewable_by_country.sort_values(ascending=False).head(5)
+
+df_grouped = df_combined.groupby(['Continent', 'Year'])['CO2 emissions'].sum()
+
+fig1, ax1 = plt.subplots(figsize=(8,6))
+fig2, ax2 = plt.subplots(figsize=(12,8))
+
+def choose_graphs(variable):
+    if variable == 'CO2 emissions':
+        for country in df_grouped.index.levels[0]:
+            ax2.plot(df_grouped.loc[country].index, df_grouped.loc[country].values, label=country)
+            ax2.fill_between(df_grouped.loc[country].index, df_grouped.loc[country].values, 0, alpha=0.2)
+        ax2.legend(loc='upper left')
+        ax2.set_xlabel('Year')
+        ax2.set_ylabel('CO2 Emissions, Million Tonnes')
+        ax2.set_title('Carbon Dioxide Emissions Over Time by Continent')
+        st.pyplot(fig2)
+        
+        top_5_countries.plot.bar(ax=ax1)
+        ax1.set_xlabel('Country')
+        ax1.set_ylabel('Carbon Dioxide Emissions, Million Tonnes')
+        ax1.set_title('Top 5 Most Emitting Countries in 2020')
+    else:
+        top_5_countries2.plot.bar(ax=ax1)
+        ax1.set_xlabel('Country')
+        ax1.set_ylabel('Renewable Energy, % of Primary Energy')
+        ax1.set_title('Top 5 Countries with the Highest Renewable Energy Share in 2020')
+
+choose_graphs(layer)
+
+st.pyplot(fig1)
