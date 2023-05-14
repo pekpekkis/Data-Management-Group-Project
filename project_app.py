@@ -163,8 +163,12 @@ top_5_countries2 = renewable_by_country.sort_values(ascending=False).head(5)
 
 df_grouped = df_combined.groupby(['Continent', 'Year'])['CO2 emissions'].sum()
 
+avg_renewable_by_continent = df_2020.groupby('Continent')['Renewable energy %'].mean()
+sorted_values = avg_renewable_by_continent.sort_values(ascending=False)
+
 fig1, ax1 = plt.subplots(figsize=(8,6))
 fig2, ax2 = plt.subplots(figsize=(12,8))
+fig3, ax3 = plt.subplots(figsize=(8, 6))
 
 def choose_graphs(variable):
     if variable == 'CO2 emissions':
@@ -172,9 +176,9 @@ def choose_graphs(variable):
             ax2.plot(df_grouped.loc[country].index, df_grouped.loc[country].values, label=country)
             ax2.fill_between(df_grouped.loc[country].index, df_grouped.loc[country].values, 0, alpha=0.2)
         ax2.legend(loc='upper left')
-        ax2.set_xlabel('Year')
-        ax2.set_ylabel('CO2 Emissions, Million Tonnes')
-        ax2.set_title('Carbon Dioxide Emissions Over Time by Continent')
+        ax2.set_xlabel('Year', fontsize=14)
+        ax2.set_ylabel('CO2 Emissions, Million Tonnes', fontsize=14)
+        ax2.set_title('Carbon Dioxide Emissions Over Time by Continent', fontsize=18)
         st.pyplot(fig2)
         
         top_5_countries.plot.bar(ax=ax1)
@@ -186,6 +190,12 @@ def choose_graphs(variable):
         ax1.set_xlabel('Country')
         ax1.set_ylabel('Renewable Energy, % of Primary Energy')
         ax1.set_title('Top 5 Countries with the Highest Renewable Energy Share in 2020')
+        
+        sorted_values.plot.bar(ax=ax3)
+        ax3.set_xlabel('Continent')
+        ax3.set_ylabel('Average Renewable Energy %')
+        ax3.set_title('Average Renewable Energy % by Continent in 2020')
+        st.pyplot(fig3)
 
 choose_graphs(layer)
 
