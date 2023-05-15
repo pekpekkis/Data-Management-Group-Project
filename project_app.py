@@ -1,3 +1,5 @@
+#Data munging
+
 import pandas as pd
 
 url = "https://raw.githubusercontent.com/pekpekkis/Data-Management-Group-Project/main/annual_co2_emissions.csv"
@@ -64,7 +66,6 @@ df_combined = df_combined.drop('Code', axis='columns')
 df_combined = df_combined.drop(df_combined[df_combined['Country'] == 'World'].index, axis=0)
 
 df_2020 = df_combined.loc[df_combined.Year == 2020]
-df_2020.dropna()
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -76,6 +77,7 @@ import branca.colormap as cm
 import streamlit as st
 from folium.plugins import MarkerCluster
 from streamlit_folium import folium_static
+import seaborn as sns
 
 world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
 world = world.sort_values('name')
@@ -96,107 +98,224 @@ map_2020 = folium.Map(location=[0, 0], zoom_start=2)
 bins_1 = [0, 1, 5, 20, 50, 100, 300, 1000, 4000, 10000, df_map_2020['CO2 emissions'].max()]
 bins_2 = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, df_map_2020['Renewable energy %'].max()]
 
-st.title('Carbon Dioxide Emissions and Renewable Energy by Country')
-st.subheader('Examine the pollution level and green energy usage in a global comparison')
-st.caption('Source: Our World in Data')
-st.write('Hover above a country to see its carbon dioxide emissions level or renewable energy usage')
-st.sidebar.title('Variables')
-layer = st.sidebar.radio('Select a variable', ('CO2 emissions', 'Renewable energy %'))
+#Data modeling
+df_clean = df_combined.dropna()
 
-if layer == 'CO2 emissions':
-    color = 'YlOrRd'
-else:
-    color = 'YlGn'
+summary_stats = df_clean.describe()
+summary_stats = summary_stats.drop(['Year', 'Low income', 'Lower-middle income', 'Upper-middle income', 'High income', 'Asia', 'Africa', 'Europe', 'North America', 'South America', 'Oceania'], axis=1)
 
-if layer == 'CO2 emissions':
-    name = 'CO2 Emissions, million tonnes'
-else:
-    name = 'Renewable energy, % of primary energy'
+df_corr = df_clean.drop(['Year', 'GDP per capita', 'Low income', 'Lower-middle income', 'Upper-middle income', 'High income', 'Asia', 'Africa', 'Europe', 'North America', 'South America', 'Oceania'], axis=1)
+corr_matrix = df_corr.corr()
 
-if layer == 'CO2 emissions':
-    scale = bins_1
-else:
-    scale = bins_2
+df_clean['CO2 emissions_log'] = np.log(df_clean['CO2 emissions'])
 
-def choose_map(variable):
-    choropleth_map = folium.Choropleth(
-        geo_data=df_map_2020,
-        name=variable,
-        data=df_map_2020,
-        columns=['Country', variable],
-        key_on='feature.properties.name',
-        fill_color= color,
-        fill_opacity=0.7,
-        line_opacity=0.2,
-        legend_name= name,
-        bins= scale,
-        highlight=True,
-        reset=True,
-        overlay=True,
-        control=True,
-        show=True
-    ).add_to(map_2020)
+features= df_clean.drop(['Country', 'Continent', 'CO2 emissions', 'CO2 emissions_log', 'Year', 'GDP per capita', 'Europe', 'High income'], axis=1)
+y_full_2 = df_clean['CO2 emissions']
+y_full= df_clean['CO2 emissions_log']
+X_full = features
 
-    choropleth_map.geojson.add_child(
-        folium.features.GeoJsonTooltip(
-            fields=['Country', variable],
-            aliases=['Country:', variable + ':'],
-            localize=True,
-            sticky=True
-            )
-        )
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X_full, y_full,test_size=0.2, random_state=1)
 
-choose_map(layer)
+numeric_columns=list(X_train.select_dtypes('float64').columns)
+dummy_columns=list(X_train.select_dtypes('int64').columns)
+categorical_columns = list(X_train.select_dtypes('int64').columns)
 
-folium_static(map_2020)
+categorical_columns_cleaned = [col for col in categorical_columns if col not in dummy_columns]
 
-import matplotlib.pyplot as plt
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler,OneHotEncoder
 
-# Group the data by country and sum the emissions for each country
-total_co2_by_country = df_2020.groupby('Country')['CO2 emissions'].sum()
+numeric_transformer = StandardScaler()
+categorical_transformer = OneHotEncoder(drop='first')
 
-# Sort the data in descending order and display the top 5 countries
-top_5_countries = total_co2_by_country.sort_values(ascending=False).head(5)
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', numeric_transformer, numeric_columns),
+        ('cat', categorical_transformer, dummy_columns)
+    ])
 
-renewable_by_country = df_2020.groupby('Country')['Renewable energy %'].sum()
-top_5_countries2 = renewable_by_country.sort_values(ascending=False).head(5)
+X_train_preprocessed = preprocessor.fit_transform(X_train)
+X_test_preprocessed = preprocessor.transform(X_test)
 
-df_grouped = df_combined.groupby(['Continent', 'Year'])['CO2 emissions'].sum()
+from sklearn.linear_model import LinearRegression
+lin_reg = LinearRegression()
 
-avg_renewable_by_continent = df_2020.groupby('Continent')['Renewable energy %'].mean()
-sorted_values = avg_renewable_by_continent.sort_values(ascending=False)
+X_train_num=X_train[numeric_columns + categorical_columns]
+lin_reg.fit(X_train_num, y_train)
 
-fig1, ax1 = plt.subplots(figsize=(8,6))
-fig2, ax2 = plt.subplots(figsize=(12,8))
-fig3, ax3 = plt.subplots(figsize=(8, 6))
+r_squared_1 = lin_reg.score(X_train_num, y_train)
+r_squared_2 = lin_reg.score(X_train_preprocessed, y_train)
 
-def choose_graphs(variable):
-    if variable == 'CO2 emissions':
-        for country in df_grouped.index.levels[0]:
-            ax2.plot(df_grouped.loc[country].index, df_grouped.loc[country].values, label=country)
-            ax2.fill_between(df_grouped.loc[country].index, df_grouped.loc[country].values, 0, alpha=0.2)
-        ax2.legend(loc='upper left')
-        ax2.set_xlabel('Year', fontsize=14)
-        ax2.set_ylabel('CO2 Emissions, Million Tonnes', fontsize=14)
-        ax2.set_title('Carbon Dioxide Emissions Over Time by Continent', fontsize=18)
-        st.pyplot(fig2)
-        
-        top_5_countries.plot.bar(ax=ax1)
-        ax1.set_xlabel('Country')
-        ax1.set_ylabel('Carbon Dioxide Emissions, Million Tonnes')
-        ax1.set_title('Top 5 Most Emitting Countries in 2020')
+
+
+#Data visualization
+def page1():
+    st.title('Carbon Dioxide Emissions and Renewable Energy by Country')
+    st.subheader('Examine the pollution level and green energy usage in a global comparison')
+    st.caption('Source: Our World in Data')
+    st.write('Hover above a country to see its carbon dioxide emissions level or renewable energy usage')
+    st.sidebar.title('Variables')
+    layer = st.sidebar.radio('Select a variable', ('CO2 emissions', 'Renewable energy %'))
+    
+    if layer == 'CO2 emissions':
+        color = 'YlOrRd'
     else:
-        top_5_countries2.plot.bar(ax=ax1)
-        ax1.set_xlabel('Country')
-        ax1.set_ylabel('Renewable Energy, % of Primary Energy')
-        ax1.set_title('Top 5 Countries with the Highest Renewable Energy Share in 2020')
-        
-        sorted_values.plot.bar(ax=ax3)
-        ax3.set_xlabel('Continent')
-        ax3.set_ylabel('Average Renewable Energy %')
-        ax3.set_title('Average Renewable Energy % by Continent in 2020')
-        st.pyplot(fig3)
+        color = 'YlGn'
+    
+    if layer == 'CO2 emissions':
+        name = 'CO2 Emissions, million tonnes'
+    else:
+        name = 'Renewable energy, % of primary energy'
+    
+    if layer == 'CO2 emissions':
+        scale = bins_1
+    else:
+        scale = bins_2
+    
+    def choose_map(variable):
+        choropleth_map = folium.Choropleth(
+            geo_data=df_map_2020,
+            name=variable,
+            data=df_map_2020,
+            columns=['Country', variable],
+            key_on='feature.properties.name',
+            fill_color= color,
+            fill_opacity=0.7,
+            line_opacity=0.2,
+            legend_name= name,
+            bins= scale,
+            highlight=True,
+            reset=True,
+            overlay=True,
+            control=True,
+            show=True
+        ).add_to(map_2020)
+    
+        choropleth_map.geojson.add_child(
+            folium.features.GeoJsonTooltip(
+                fields=['Country', variable],
+                aliases=['Country:', variable + ':'],
+                localize=True,
+                sticky=True
+                )
+            )
+    
+    choose_map(layer)
+    
+    folium_static(map_2020)
+    
+    import matplotlib.pyplot as plt
+    
+    # Group the data by country and sum the emissions for each country
+    total_co2_by_country = df_2020.groupby('Country')['CO2 emissions'].sum()
+    
+    # Sort the data in descending order and display the top 5 countries
+    top_5_countries = total_co2_by_country.sort_values(ascending=False).head(5)
+    
+    renewable_by_country = df_2020.groupby('Country')['Renewable energy %'].sum()
+    top_5_countries2 = renewable_by_country.sort_values(ascending=False).head(5)
+    
+    df_grouped = df_combined.groupby(['Continent', 'Year'])['CO2 emissions'].sum()
+    
+    avg_renewable_by_continent = df_2020.groupby('Continent')['Renewable energy %'].mean()
+    sorted_values = avg_renewable_by_continent.sort_values(ascending=False)
+    
+    fig1, ax1 = plt.subplots(figsize=(8,6))
+    fig2, ax2 = plt.subplots(figsize=(12,8))
+    fig3, ax3 = plt.subplots(figsize=(8, 6))
+    
+    def choose_graphs(variable):
+        if variable == 'CO2 emissions':
+            for country in df_grouped.index.levels[0]:
+                ax2.plot(df_grouped.loc[country].index, df_grouped.loc[country].values, label=country)
+                ax2.fill_between(df_grouped.loc[country].index, df_grouped.loc[country].values, 0, alpha=0.2)
+            ax2.legend(loc='upper left')
+            ax2.set_xlabel('Year', fontsize=14)
+            ax2.set_ylabel('CO2 Emissions, Million Tonnes', fontsize=14)
+            ax2.set_title('Carbon Dioxide Emissions Over Time by Continent', fontsize=18)
+            st.pyplot(fig2)
+            
+            top_5_countries.plot.bar(ax=ax1)
+            ax1.set_xlabel('Country')
+            ax1.set_ylabel('Carbon Dioxide Emissions, Million Tonnes')
+            ax1.set_title('Top 5 Most Emitting Countries in 2020')
+        else:
+            top_5_countries2.plot.bar(ax=ax1)
+            ax1.set_xlabel('Country')
+            ax1.set_ylabel('Renewable Energy, % of Primary Energy')
+            ax1.set_title('Top 5 Countries with the Highest Renewable Energy Share in 2020')
+            
+            sorted_values.plot.bar(ax=ax3)
+            ax3.set_xlabel('Continent')
+            ax3.set_ylabel('Average Renewable Energy %')
+            ax3.set_title('Average Renewable Energy % by Continent in 2020')
+            st.pyplot(fig3)
+    
+    choose_graphs(layer)
+    
+    st.pyplot(fig1)
+    
+def page2():
+    st.title("Page 2")
+    # Add content for page 2
+    summary_stats
+    
+    corr_matrix
+    
+    fig4, ax4 = plt.subplots(figsize=(11.7, 8.27))
+    sns.histplot(y_full_2, bins=30, ax=ax4)
+    ax4.set_xlabel("CO2 emissions", size=15)
+    ax4.set_ylabel('count', size=15)
+    ax4.set_title('Distribution of CO2 emissions', size=20)
+    st.pyplot(plt)
+    
+    fig5, ax5 = plt.subplots(figsize=(11.7, 8.27))
+    sns.histplot(y_full, bins=30, ax=ax5)
+    ax5.set_xlabel("CO2 emissions_log", size=15)
+    ax5.set_ylabel('count', size=15)
+    ax5.set_title('Distribution of logarithmic CO2 emissions', size=20)
+    st.pyplot(plt)
+    
+    import statsmodels.api as sm
 
-choose_graphs(layer)
+    # Create X and y from the dataframe
+    X = df_clean[["Renewable energy %", "Population", "GDP", "Gini",
+                  "Low income", "Lower-middle income", "Upper-middle income",
+                  "Africa", "Asia", "North America", "South America", "Oceania"]]
+    y = df_clean["CO2 emissions_log"]
+    
+    # Fit the linear regression model using sklearn
+    #lin_reg = LinearRegression()
+    lin_reg.fit(X, y)
+    
+    # Add constant column to X for intercept term
+    X_with_constant = sm.add_constant(X)
+    
+    # Fit the OLS model using statsmodels
+    ols_model = sm.OLS(y, X_with_constant)
+    results = ols_model.fit()
+    
+    # Get the coefficients from sklearn's linear regression model
+    coefficients = lin_reg.coef_
+    
+    # Calculate the p-values using statsmodels
+    p_values = results.pvalues[1:]  # Exclude the intercept
+    
+    # Associate the coefficients with their corresponding p-values
+    coefficients_with_pvalues = pd.DataFrame({"Coefficient": coefficients, "P-value": p_values}, index=X.columns)
+    
+    coefficients_with_pvalues
+    
+    
+    
+    
 
-st.pyplot(fig1)
+# Sidebar navigation
+nav_selection = st.sidebar.radio("Go to", ["Page 1", "Page 2"])
+
+# Render selected page
+if nav_selection == "Page 1":
+    page1()
+elif nav_selection == "Page 2":
+    page2()
