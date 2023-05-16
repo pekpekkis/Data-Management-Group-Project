@@ -245,11 +245,11 @@ def page2():
     def choose_regression_page(reg):
         global df_clean
         if reg == 'Linear regression for whole dataset':
-            #Data modeling, regression for the whole dataset
+            #Whole dataset
             pass
             
         else:
-            #Data modeling, regression without outliers
+            #Dataset without outliers
             #Removing outliers from the dataset
             threshold = 1
 
