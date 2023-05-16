@@ -245,11 +245,11 @@ def page2():
     def choose_regression_page(reg):
         global df_clean
         if reg == 'Linear regression for whole dataset':
-            #Data modeling, regression for the whole dataset
+            #Whole dataset
             pass
             
         else:
-            #Data modeling, regression without outliers
+            #Dataset without outliers
             #Removing outliers from the dataset
             threshold = 1
 
@@ -262,6 +262,7 @@ def page2():
     #Defining the factor for changing the dataset
     choose_regression_page(regression_page)
     
+    ##Data modeling
     #Summary statistics of the numerical variables
     summary_stats = df_clean.describe()
     summary_stats = summary_stats.drop(['Year', 'CO2 emissions_log', 'Low income', 'Lower-middle income', 'Upper-middle income', 'High income', 'Asia', 'Africa', 'Europe', 'North America', 'South America', 'Oceania'], axis=1)
@@ -312,11 +313,11 @@ def page2():
     #Defining numerical columns which in this case are all of the columns
     X_train_num=X_train[numeric_columns + categorical_columns]
     
-    #Fitting the trainingset to the model
+    #Fitting the trainingset to the model and calculating R-squared
     lin_reg.fit(X_train_num, y_train)
     r_squared_1 = lin_reg.score(X_train_num, y_train)
     
-    #Fitting the prerocessed data to the model
+    #Fitting the prerocessed data to the model and calculating R-squared
     lin_reg.fit(X_train_preprocessed, y_train)
     r_squared_2 = lin_reg.score(X_train_preprocessed, y_train)
 
