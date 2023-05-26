@@ -16,4 +16,16 @@ The complete version is in the python file project_app.py. The app is a streamli
 The second page presents results of a log-linear regression, first with the whole dataset (with missing values removed) and second with outliers removed from the
 data. Under the tables showcasing the regression resluts a few comments is made about the statistical significance and goodness-of-fit.
 
+The packages that are needed to run the code:
+
+  -Pandas
+  -Geopandas
+  -Matplotlib
+  -Matplotlib.pyplot
+  -Numpy
+  -Folium
+  -Streamlit
+  -Seaborn
+  -Statsmodels.api
+
 Also, a written report as a pdf file can be found in the repository along with presentation slides. These include the motivation for the project and more ellaborative comments on the data and regression results. The report file is called - and the presentation slides are - .
