@@ -20,7 +20,7 @@ The packages that are needed to run the code:
 
     -Pandas
     -Geopandas
-      -Matplotlib
+     -Matplotlib
     -Matplotlib.pyplot
     -Numpy
     -Folium
