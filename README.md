@@ -28,4 +28,4 @@ The packages that are needed to run the code:
     -Seaborn
     -Statsmodels.api
 
-Also, a written report as a pdf file can be found in the repository along with presentation slides. These include the motivation for the project and more ellaborative comments on the data and regression results. The report file is called - and the presentation slides are - .
+Also, a written report as a pdf file can be found in the repository along with presentation slides. These include the motivation for the project and more ellaborative comments on the data and regression results. The report file is called - and the presentation slides are The power point document named: Co2 emissions and renewable energy slide for exam.pptx .
