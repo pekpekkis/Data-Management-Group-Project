@@ -12,9 +12,9 @@ The repository includes:
     -Data modeling
     
 The complete version is in the python file project_app.py. The app is a streamlit app which runs when going to the right directory in prompt and typing
-"streamlit run project_app.py". The app includes every part of the project which showcases the carbon dioxide emissions and renewable energy usage by country.
+"streamlit run project_app.py". The app includes every part of the project and begins with a page showcasing the carbon dioxide emissions and renewable energy usage by country.
 The second page presents results of a log-linear regression, first with the whole dataset (with missing values removed) and second with outliers removed from the
-data. Under the tables showcasing the regression resluts a few comments is made about the statistical significance and goodness-of-fit.
+data. Under the tables showcasing the regression results a few comments is made about the statistical significance and goodness-of-fit.
 
 The packages that are needed to run the code:
 
