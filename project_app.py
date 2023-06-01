@@ -78,10 +78,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
 import folium
-import contextily as ctx
-import branca.colormap as cm
 import streamlit as st
-from folium.plugins import MarkerCluster
 from streamlit_folium import folium_static
 import seaborn as sns
 
@@ -174,8 +171,6 @@ def page1():
     
     folium_static(map_2020)
     
-    import matplotlib.pyplot as plt
-    
     # Group the data by country and sum the emissions for each country
     total_co2_by_country = df_2020.groupby('Country')['CO2 emissions'].sum()
     
@@ -239,6 +234,7 @@ def page1():
 def page2():
     st.title("Log-linear -regression Explaining Carbon Dioxide Emissions with Renewable Energy and Other Controlling Variables")
     st.caption('Source: Our World in Data')
+    st.sidebar.title('Regressions')
     regression_page = st.sidebar.radio('Select regression to examine', ('Linear regression for whole dataset', 'Linear regression with outliers removed'))
     
     #Creating a function to switch between different datasets for regression
